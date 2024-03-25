@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_toonflix/models/webtoon_model.dart';
 import 'package:flutter_toonflix/services/api_service.dart';
+import 'package:flutter_toonflix/widgets/webtoon_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
@@ -14,10 +15,10 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         elevation: 2,
         backgroundColor: Colors.white,
+        foregroundColor: Colors.green,
         title: const Center(
           child: Text(
             '오늘의 웹툰',
-            style: TextStyle(color: Colors.green),
           ),
         ),
       ),
@@ -25,11 +26,37 @@ class HomeScreen extends StatelessWidget {
         future: webtoons,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return Text('success');
+            return Column(
+              children: [
+                const SizedBox(
+                  height: 50,
+                ),
+                Expanded(child: makeList(snapshot))
+              ],
+            );
           }
-          return Text('loading...');
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
         },
       ),
+    );
+  }
+
+  ListView makeList(AsyncSnapshot<List<WebtoonModel>> snapshot) {
+    return ListView.separated(
+      scrollDirection: Axis.horizontal,
+      itemCount: snapshot.data!.length,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      itemBuilder: (context, index) {
+        var webtoon = snapshot.data![index];
+        return Webtoon(
+          title: webtoon.title,
+          thumb: webtoon.thumb,
+          id: webtoon.id,
+        );
+      },
+      separatorBuilder: (context, index) => const SizedBox(width: 40),
     );
   }
 }
