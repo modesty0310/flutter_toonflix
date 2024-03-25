@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_toonflix/models/webtoon_detail_model.dart';
 import 'package:flutter_toonflix/models/webtoon_episode_model.dart';
 import 'package:flutter_toonflix/services/api_service.dart';
 import 'package:flutter_toonflix/widgets/episode_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailScreen extends StatefulWidget {
   final String id, title, thumb;
@@ -21,12 +21,45 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   late Future<WebtoonDetailModel> webtoon;
   late Future<List<WebtoonEpisodeModel>> episodes;
+  late SharedPreferences prefs;
+  bool isFavoit = false;
+
+  Future initPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+    final likedToons = prefs.getStringList('likedToons');
+    if (likedToons != null) {
+      if (likedToons.contains(widget.id)) {
+        setState(() {
+          isFavoit = true;
+        });
+      }
+    } else {
+      await prefs.setStringList('likedToons', []);
+    }
+  }
+
+  void onFavoritIconTap() async {
+    final likedToons = prefs.getStringList('likedToons');
+    print(likedToons);
+    if (likedToons != null) {
+      if (likedToons.contains(widget.id)) {
+        likedToons.remove(widget.id);
+      } else {
+        likedToons.add(widget.id);
+      }
+      await prefs.setStringList('likedToons', likedToons);
+      setState(() {
+        isFavoit = !isFavoit;
+      });
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     webtoon = ApiService.getWebtonDetail(widget.id);
     episodes = ApiService.getWebtonEpisodes(widget.id);
+    initPrefs();
   }
 
   @override
@@ -34,6 +67,14 @@ class _DetailScreenState extends State<DetailScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        actions: [
+          IconButton(
+            onPressed: onFavoritIconTap,
+            icon: isFavoit
+                ? const Icon(Icons.favorite_outline_outlined)
+                : const Icon(Icons.favorite_sharp),
+          ),
+        ],
         elevation: 2,
         backgroundColor: Colors.white,
         foregroundColor: Colors.green,
